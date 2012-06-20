@@ -1,0 +1,21 @@
+{
+  "author": "Christopher Giffard <christopher.giffard@cgiffard.com>",
+  "name": "Castor",
+  "description": "Ultra-simple HTML/XML parser. Generates a DOM-like (but extremely simplified and not at all compliant) tree.",
+  "version": "0.0.1",
+  "homepage": "https://github.com/cgiffard/Castor",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cgiffard/Castor.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "engines": {
+    "node": "~0.6.9"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {}
+}
