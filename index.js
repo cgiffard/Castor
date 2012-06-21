@@ -1,5 +1,5 @@
 // Castor HTML/XML Parser
-// Ultra-simple parser. Generates a DOM-like (but extremely simplified and not at all compliant) tree.
+// Ultra-simple HTML/XML parser. Generates a DOM-like (but extremely simplified and not at all compliant) tree.
 // Use in cases where you can't afford the additional weight of a real DOM builder.
 // 
 // The ultimate goal is to make this streamable. But it's not there yet.
@@ -21,12 +21,10 @@
 		STATE_WITHIN_XML_INSTRUCTION	= 4,
 		STATE_WITHIN_CDATA				= 5,
 		STATE_WITHIN_COMMENT			= 6,
-		STATE_EXPECTING_ENTITY			= 7,
-		STATE_WITHIN_ENTITY				= 8,
-		STATE_EXPECTING_ELEMENT_NAME	= 9,
-		STATE_EXPECTING_ATTRIBUTE_NAME	= 10,
-		STATE_EXPECTING_ATTRIBUTE_VALUE	= 11,
-		STATE_EXPECTING_ELEMENT_CLOSE	= 12;
+		STATE_EXPECTING_ELEMENT_NAME	= 7,
+		STATE_EXPECTING_ATTRIBUTE_NAME	= 8,
+		STATE_EXPECTING_ATTRIBUTE_VALUE	= 9,
+		STATE_EXPECTING_ELEMENT_CLOSE	= 10;
 	
 	// Nodes which should be considered implicitly self-closing	
 	// Taken from http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html#void-elements
@@ -109,7 +107,7 @@
 		this.doctype = null;
 		
 		// Variables for managing parser state...
-		this.tree				= new Node(1,"document");
+		this.tree				= new Node(99,"document"); // '99' is just a node number I've made up for the document node.
 		this.state				= 0;
 		this.prevState			= 0;
 		this.tokenBuffer		= "";
@@ -125,24 +123,10 @@
 		// These two are just for debugging.
 		this.lineNo				= 0;
 		this.colNo				= 0;
-		
-		// Determines whether debug output is written to STDOUT
-		this.debug				= false;
 	};
-	
-	
-	// Helper function for writing debugging output
-	Castor.prototype.debug = function(text) {
-		var indent = "";
-		while (indent.length < this.treeDepth) indent += "\t";
-		
-		//console.log(indent + lineNo + ":" + colNo + " - [STATE:" + state + "] (" + curChar + ") " + text);
-	};
-	
 	
 	// Helper function for altering the internal state of the parser.
 	Castor.prototype.setState = function(newState) {
-		//debug("Changing state to " + newState);
 		this.prevState = this.state;
 		this.state = newState;
 	};
@@ -226,6 +210,8 @@
 		var self = this;
 		var charIndex = 0;
 		
+		sourceInput = typeof sourceInput === "string" ? sourceInput : sourceInput.toString();
+		
 		// Kick off the parser!
 		
 		while (charIndex < sourceInput.length) {
@@ -254,10 +240,6 @@
 	
 						self.setState(STATE_EXPECTING_TAG);
 	
-					} else if (self.curChar === "&") {
-	
-						self.setState(STATE_EXPECTING_ENTITY);
-	
 					} else {
 	
 						// Character wasn't an instruction, so we'll save it to our token buffer.
@@ -271,21 +253,21 @@
 				case STATE_EXPECTING_TAG:
 	
 					if (self.curChar === "!") {
-	
+						
 						// We've got a 'bang' tag on our hands.
 						// Wait for the character after this to determine what we're dealing with...
 						// This could be a comment or a doctype.
 						self.setState(STATE_EXPECTING_BANG_QUALIFIER);
-	
+						
 					} else if (self.curChar === "?") {
-	
+						
 						// We've got an XML processing instruction on our hands.
 						// For now, we just ignore these. Not like I need 'em for this anyway.
-	
+						
 						self.setState(STATE_WITHIN_XML_INSTRUCTION);
-	
+						
 					} else if (self.curChar.match(/[a-z0-9]/i)) {
-	
+						
 						// Looks like an element node. Flush current buffer to tree and get ready to handle element name...
 						self.flushBuffer();
 						self.buffer(self.curChar);
@@ -357,10 +339,14 @@
 					break;
 	
 				case STATE_WITHIN_XML_INSTRUCTION:
+					
+					bailout("XML instructions not yet supported.");
 	
 					break;
 	
 				case STATE_WITHIN_CDATA:
+				
+					bailout("CDATA not yet supported.");
 	
 					break;
 	
@@ -403,21 +389,6 @@
 	
 						self.buffer(self.curChar);
 					}
-	
-					break;
-	
-				case STATE_EXPECTING_ENTITY:
-	
-					if (self.curChar.match(/\s/) || 1 == 1) {
-						// Oh dear. It was an unescaped ampersand. Buffer and reset to uninitialised state...
-						//self.buffer(self.prevChar);
-						self.buffer(self.curChar);
-						self.setState(STATE_UNINITIALISED);
-					}
-	
-					break;
-	
-				case STATE_WITHIN_ENTITY:
 	
 					break;
 	
@@ -681,7 +652,7 @@
 		}
 	
 		// Return the finished parse tree to the calling function...
-		return tree;
+		return self.tree;
 	};
 	
 	function castorExport() {
