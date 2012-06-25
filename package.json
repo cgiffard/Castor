@@ -2,7 +2,7 @@
   "author": "Christopher Giffard <christopher.giffard@cgiffard.com>",
   "name": "castor",
   "description": "Ultra-simple HTML/XML parser. Generates a DOM-like (but extremely simplified and not at all compliant) tree.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/cgiffard/Castor",
   "repository": {
     "type": "git",
