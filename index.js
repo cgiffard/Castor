@@ -80,6 +80,27 @@
 		this.flatness = 0;
 	};
 
+	// Function for easily retrieving text from
+	Node.prototype.getText = function(recursive) {
+		// Don't want text content retrieved from comments or other nodes unless explicitly requested.
+		if (this.nodeType !== 3 && this.nodeType !== 1 && recursive) return "";
+
+		// Get our text content...
+		var textBuffer = this.textContent;
+		
+		if (textBuffer.length) return textBuffer;
+
+		// ...and do the same for all our children...
+		this.childNodes.forEach(function(node) {
+			textBuffer += node.getText(true);
+		});
+		
+		this.textContent = textBuffer;
+		
+		// ...and return.
+		return textBuffer;
+	};
+
 	// Helper function that determines whether the current node is 'raw text', that is,
 	// parser state should only change when the characters '</' are encountered.
 	function isRawTextNode(node) {
@@ -223,8 +244,6 @@
 		throw new Error("Unexpected token at line " + this.lineNo + ", column " + this.colNo + ": '" + this.curChar + "'. Parser state was: " + this.state + (message && message.length ? "\n" + message : ""));
 	}
 
-
-
 	// The actual parser function.
 
 	Castor.prototype.parse = function(sourceInput) {
@@ -291,7 +310,7 @@
 					} else if (self.curChar.match(/[a-z0-9]/i)) {
 
 						// Check to see whether we're inside a raw text node
-						// (raw text nodes should not have children, and any child nodes will be treated as text.)
+						// (raw text nodes and void nodes should not have children, and any child nodes will be treated as text.)
 						if (isRawTextNode(self.currentNode)) {
 
 							// Just buffer the previous character '>' and the current character
@@ -517,6 +536,7 @@
 
 						// Get the element name from the buffer...
 						var elementName = self.getBuffer();
+						self.clearBuffer();
 
 						// If this tag implicitly closes the currently open node
 						if (closesCurrentNode(elementName,self.currentNode.tagName)) {
@@ -528,10 +548,16 @@
 
 						// Create element node with the buffer as its tagName
 						// Assign the current node as its parent...
+						// (well, unless the current node is a 'void' node, not supposed to have children.)
 						var newElement = new Node(1,elementName);
-						newElement.parentNode = self.currentNode;
-						self.currentNode.childNodes.push(newElement);
-						self.clearBuffer();
+
+						if (isVoidNode(self.currentNode)) {
+							newElement.parentNode = self.currentNode.parentNode;
+							self.currentNode.parentNode.childNodes.push(newElement);
+						} else {
+							newElement.parentNode = self.currentNode;
+							self.currentNode.childNodes.push(newElement);
+						}
 
 						// Set as the current node
 						self.currentNode = newElement;
